@@ -72,7 +72,7 @@ function transformDestitutionData(
         risk: risk * 100, // Convert to percentage for display
       }
     })
-    .filter((point: ChartDataPoint) => point.age <= plan.plan_end_age)
+    .filter((point: ChartDataPoint) => (point.age as number) <= plan.plan_end_age)
 
   console.log('[DestitutionRiskChart] Transformed chart data:', data.slice(0, 3), '... (showing first 3)')
   return data
