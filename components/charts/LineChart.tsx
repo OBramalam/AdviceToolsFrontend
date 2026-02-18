@@ -32,7 +32,7 @@ export interface LineChartProps extends Omit<BaseChartProps, 'children'> {
   showNominalRealToggle?: boolean
   showDots?: boolean // Whether to show dots on the line (default: true)
   // Optional custom tooltip formatter (Recharts Tooltip formatter signature)
-  tooltipFormatter?: (value: any, name: string, props: any) => any
+  tooltipFormatter?: (value: any, name: string | undefined, props: any) => any
 }
 
 export function LineChart({
