@@ -279,7 +279,7 @@ export function GrowthOfWealthChart({
                 padding: '0.5rem',
               }}
               labelStyle={{ color: '#374151', fontWeight: 600 }}
-              formatter={(value: number | undefined) => {
+              formatter={(value: number | undefined, name: string | undefined) => {
                 if (value === undefined) return ['', '']
                 return [
                   new Intl.NumberFormat('en-US', {

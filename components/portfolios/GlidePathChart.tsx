@@ -354,7 +354,8 @@ export function GlidePathChart({
                 padding: '0.5rem',
               }}
               labelStyle={{ color: '#374151', fontWeight: 600 }}
-              formatter={(value: number, name: string) => {
+              formatter={(value: number | undefined, name: string | undefined) => {
+                if (value === undefined || name === undefined) return ['', '']
                 if (name === 'stocks') return [`${value.toFixed(1)}%`, 'Equity']
                 if (name === 'bonds')
                   return [`${value.toFixed(1)}%`, 'Bonds (inferred)']
