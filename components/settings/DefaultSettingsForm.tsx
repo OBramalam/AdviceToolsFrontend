@@ -27,23 +27,23 @@ function percentToDecimal(percentStr: string): number | null {
   return num / 100
 }
 
+// Default values when no config exists
+const defaultValues = {
+  inflation: '2.0',
+  asset_costs_stocks: '0.1',
+  asset_costs_bonds: '0.1',
+  asset_costs_cash: '0.1',
+  expected_returns_stocks: '8.0',
+  expected_returns_bonds: '4.0',
+  expected_returns_cash: '2.0',
+  number_of_simulations: 5000,
+  allocation_step: '10.0',
+}
+
 export function DefaultSettingsForm() {
   const { data: config, isLoading, error } = useAdviserConfig()
   const createMutation = useCreateAdviserConfig()
   const updateMutation = useUpdateAdviserConfig()
-
-  // Default values when no config exists
-  const defaultValues = {
-    inflation: '2.0',
-    asset_costs_stocks: '0.1',
-    asset_costs_bonds: '0.1',
-    asset_costs_cash: '0.1',
-    expected_returns_stocks: '8.0',
-    expected_returns_bonds: '4.0',
-    expected_returns_cash: '2.0',
-    number_of_simulations: 5000,
-    allocation_step: '10.0',
-  }
 
   const [formData, setFormData] = useState<{
     inflation: string

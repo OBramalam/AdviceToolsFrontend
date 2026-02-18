@@ -133,7 +133,7 @@ export default function DashboardPage() {
             </h2>
             <p className="text-gray-600 mb-8">
               Use the chat interface on the right to start building your financial plan.
-              Once you've completed the conversation, you can export it to
+              Once you&apos;ve completed the conversation, you can export it to
               create your financial plan.
             </p>
             <div className="space-y-2 text-left text-sm text-gray-500">
