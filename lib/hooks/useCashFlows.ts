@@ -31,7 +31,7 @@ export function useCreateCashFlow() {
       planId: number
       data: Omit<CashFlow, 'id' | 'plan_id'>
     }) => cashFlowsApi.createCashFlow(planId, data),
-    onSuccess: (_: CashFlow, variables: { planId: number }) => {
+    onSuccess: (_: CashFlow, variables) => {
       // Invalidate cash flows for the plan
       queryClient.invalidateQueries({
         queryKey: ['cashFlows', variables.planId],
@@ -51,7 +51,7 @@ export function useUpdateCashFlow() {
       id: number
       data: Omit<CashFlow, 'id' | 'plan_id'>
     }) => cashFlowsApi.updateCashFlow(id, data),
-    onSuccess: (data: CashFlow, variables: { id: number }) => {
+    onSuccess: (data: CashFlow, variables) => {
       // Invalidate cash flow and all cash flows lists
       queryClient.invalidateQueries({ queryKey: ['cashFlow', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['cashFlows'] })
