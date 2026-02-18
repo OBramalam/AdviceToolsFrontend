@@ -55,7 +55,7 @@ export function transformPortfolioToAPI(
       step: w.step,
       stocks: w.stocks,
       bonds: 1 - w.stocks - portfolio.cash_allocation, // Calculate bonds
-      // cash is calculated automatically by backend as 1 - stocks - bonds
+      cash: portfolio.cash_allocation, // Cash allocation is constant
     })),
     expected_returns: portfolio.expected_returns,
     asset_costs: portfolio.asset_costs,
