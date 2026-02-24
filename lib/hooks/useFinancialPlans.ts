@@ -66,3 +66,20 @@ export function useDeleteFinancialPlan() {
     },
   })
 }
+
+export function useDuplicateFinancialPlan() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: number) => financialPlansApi.duplicateFinancialPlan(id),
+    onSuccess: (newPlan: FinancialPlan) => {
+      // Refresh plans list so the new plan appears
+      queryClient.invalidateQueries({ queryKey: ['financialPlans'] })
+      // Prime cache for the duplicated plan
+      if (newPlan.id) {
+        queryClient.setQueryData(['financialPlan', newPlan.id], newPlan)
+      }
+    },
+  })
+}
+

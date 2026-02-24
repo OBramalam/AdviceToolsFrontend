@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/Card'
 import { Spinner } from '@/components/ui/Spinner'
 import { Select } from '@/components/ui/Select'
 import { Input } from '@/components/ui/Input'
+import { Button } from '@/components/ui/Button'
+import { Copy, Trash2 } from 'lucide-react'
 import {
   GeneralInfoTable,
   IncomeTable,
@@ -14,7 +16,13 @@ import {
   ChartCarousel,
 } from '@/components/dashboard'
 import { PortfolioManager } from '@/components/portfolios/PortfolioManager'
-import { useFinancialPlans, useFinancialPlan } from '@/lib/hooks/useFinancialPlans'
+import {
+  useFinancialPlans,
+  useFinancialPlan,
+  useDuplicateFinancialPlan,
+  useDeleteFinancialPlan,
+  useUpdateFinancialPlan,
+} from '@/lib/hooks/useFinancialPlans'
 import { useCashFlows } from '@/lib/hooks/useCashFlows'
 import { useRunSimulation } from '@/lib/hooks/useSimulation'
 import { CashFlow, FinancialPlan } from '@/types/api'
@@ -25,6 +33,13 @@ export default function DashboardPage() {
 
   // State for selected plan ID
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null)
+
+  const duplicatePlanMutation = useDuplicateFinancialPlan()
+  const deletePlanMutation = useDeleteFinancialPlan()
+  const updatePlanMutation = useUpdateFinancialPlan()
+
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [nameDraft, setNameDraft] = useState<string>('')
 
   // Set default selected plan when plans load
   useEffect(() => {
@@ -41,6 +56,13 @@ export default function DashboardPage() {
     data: selectedPlan,
     isLoading: planLoading,
   } = useFinancialPlan(selectedPlanId ?? 0)
+
+  // Keep local name draft in sync when selected plan changes (unless actively editing)
+  useEffect(() => {
+    if (selectedPlan && !isEditingName) {
+      setNameDraft(selectedPlan.name ?? '')
+    }
+  }, [selectedPlan, isEditingName])
 
   // Fetch cash flows for selected plan
   const {
@@ -162,9 +184,122 @@ export default function DashboardPage() {
         {/* Page Header with Plan Selector */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-900">
-              {selectedPlan.name}
-            </h1>
+            <div className="flex flex-wrap items-center gap-3">
+              {isEditingName ? (
+                <input
+                  className="text-2xl font-bold text-gray-900 bg-transparent border-b border-gray-300 focus:outline-none focus:border-primary min-w-[8rem]"
+                  value={nameDraft}
+                  autoFocus
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  onBlur={() => {
+                    if (!selectedPlan?.id) {
+                      setIsEditingName(false)
+                      return
+                    }
+                    const { id, user_id, ...rest } = selectedPlan as any
+                    updatePlanMutation.mutate(
+                      {
+                        id,
+                        data: {
+                          ...rest,
+                          name: nameDraft,
+                        },
+                      },
+                      {
+                        onSettled: () => {
+                          setIsEditingName(false)
+                        },
+                      }
+                    )
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      ;(e.target as HTMLInputElement).blur()
+                    }
+                    if (e.key === 'Escape') {
+                      setNameDraft(selectedPlan?.name ?? '')
+                      setIsEditingName(false)
+                    }
+                  }}
+                />
+              ) : (
+                <button
+                  type="button"
+                  className="text-left"
+                  onClick={() => {
+                    setNameDraft(selectedPlan.name ?? '')
+                    setIsEditingName(true)
+                  }}
+                >
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {selectedPlan.name}
+                  </h1>
+                </button>
+              )}
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={!selectedPlanId || duplicatePlanMutation.isPending}
+                  onClick={() => {
+                    if (!selectedPlanId) return
+                    duplicatePlanMutation.mutate(selectedPlanId, {
+                      onSuccess: (newPlan) => {
+                        if (newPlan.id) {
+                          setSelectedPlanId(newPlan.id)
+                        }
+                      },
+                    })
+                  }}
+                >
+                  <Copy className="w-4 h-4" aria-hidden="true" />
+                  <span className="sr-only">
+                    {duplicatePlanMutation.isPending ? 'Duplicating plan…' : 'Duplicate plan'}
+                  </span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  disabled={!selectedPlanId || deletePlanMutation.isPending || !plans || plans.length === 0}
+                  onClick={() => {
+                    if (!selectedPlanId || !plans || plans.length === 0) return
+                    const confirmed = window.confirm(
+                      'Are you sure you want to delete this plan? This action cannot be undone.'
+                    )
+                    if (!confirmed) return
+
+                    // Determine which plan to select after deletion
+                    const currentIndex = plans.findIndex(
+                      (p) => p.id === selectedPlanId
+                    )
+                    const remainingPlans = plans.filter(
+                      (p) => p.id !== selectedPlanId
+                    )
+                    let nextPlanId: number | null = null
+                    if (remainingPlans.length > 0) {
+                      const fallbackIndex =
+                        currentIndex >= remainingPlans.length
+                          ? remainingPlans.length - 1
+                          : currentIndex
+                      nextPlanId = remainingPlans[fallbackIndex].id ?? null
+                    }
+
+                    deletePlanMutation.mutate(selectedPlanId, {
+                      onSuccess: () => {
+                        setSelectedPlanId(nextPlanId)
+                      },
+                    })
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" aria-hidden="true" />
+                  <span className="sr-only">
+                    {deletePlanMutation.isPending ? 'Deleting plan…' : 'Delete plan'}
+                  </span>
+                </Button>
+              </div>
+            </div>
             {selectedPlan.description && (
               <p className="text-gray-600 mt-1">{selectedPlan.description}</p>
             )}

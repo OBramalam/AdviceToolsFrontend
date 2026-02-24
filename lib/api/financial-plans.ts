@@ -35,3 +35,13 @@ export async function deleteFinancialPlan(id: number): Promise<void> {
   await apiClient.delete(`/financial-plans/${id}`)
 }
 
+export async function duplicateFinancialPlan(
+  id: number
+): Promise<FinancialPlan> {
+  const response = await apiClient.post<FinancialPlan>(
+    `/financial-plans/${id}/duplicate`
+  )
+  return response.data
+}
+
+
