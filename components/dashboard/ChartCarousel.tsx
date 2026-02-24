@@ -4,27 +4,27 @@
 
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react'
-import { PortfolioProjectionChart } from './PortfolioProjectionChart'
+import { SimulationPercentilesChart } from './SimulationPercentilesChart'
 import { GrowthOfWealthChart } from './GrowthOfWealthChart'
-import { DestitutionRiskChart } from './DestitutionRiskChart'
+import { RiskOfFailureChart } from './RiskOfFailureChart'
 // import { FinalWealthDistributionChart } from './FinalWealthDistributionChart'
-import { PortfolioProjectionChartProps } from './PortfolioProjectionChart'
+import { SimulationPercentilesChartProps } from './SimulationPercentilesChart'
 import { clsx } from 'clsx'
 
 export interface ChartCarouselProps {
-  plan: PortfolioProjectionChartProps['plan']
-  simulationResponse: PortfolioProjectionChartProps['simulationResponse']
-  isSimulating: PortfolioProjectionChartProps['isSimulating']
-  simulationError: PortfolioProjectionChartProps['simulationError']
+  plan: SimulationPercentilesChartProps['plan']
+  simulationResponse: SimulationPercentilesChartProps['simulationResponse']
+  isSimulating: SimulationPercentilesChartProps['isSimulating']
+  simulationError: SimulationPercentilesChartProps['simulationError']
   onRunSimulation?: () => void
 }
 
 type ChartType = 'projection' | 'growth' | 'destitution'
 
 const CHARTS: Array<{ id: ChartType; name: string }> = [
-  { id: 'projection', name: 'Portfolio Projection' },
+  { id: 'projection', name: 'Simulation Percentiles' },
   { id: 'growth', name: 'Growth of Wealth' },
-  { id: 'destitution', name: 'Destitution Risk' },
+  { id: 'destitution', name: 'Risk of Failure' },
 ]
 
 export function ChartCarousel({
@@ -121,7 +121,7 @@ export function ChartCarousel({
       {/* Chart Container */}
       <div className="relative">
         {currentChart.id === 'projection' && (
-          <PortfolioProjectionChart
+          <SimulationPercentilesChart
             plan={plan}
             simulationResponse={simulationResponse}
             isSimulating={isSimulating}
@@ -137,7 +137,7 @@ export function ChartCarousel({
           />
         )}
         {currentChart.id === 'destitution' && (
-          <DestitutionRiskChart
+          <RiskOfFailureChart
             plan={plan}
             simulationResponse={simulationResponse}
             isSimulating={isSimulating}

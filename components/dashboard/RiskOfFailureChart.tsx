@@ -1,4 +1,4 @@
-// Destitution Risk Chart component - Line chart showing probability of destitution over time
+// Risk of Failure Chart component - Line chart showing probability of failure over time
 
 'use client'
 
@@ -10,7 +10,7 @@ import { ChartDataPoint, LineSeries } from '@/types/charts'
 import { FinancialPlan, SimulationResponse } from '@/types/api'
 import { timestepToAge, TimestepUnit } from '@/lib/utils/timestep'
 
-export interface DestitutionRiskChartProps {
+export interface RiskOfFailureChartProps {
   plan: FinancialPlan | null | undefined
   simulationResponse: SimulationResponse | null | undefined
   isSimulating: boolean
@@ -25,7 +25,7 @@ function transformDestitutionData(
   plan: FinancialPlan
 ): ChartDataPoint[] {
   if (!result) {
-    console.log('[DestitutionRiskChart] No simulation result provided')
+    console.log('[RiskOfFailureChart] No simulation result provided')
     return []
   }
 
@@ -35,7 +35,7 @@ function transformDestitutionData(
   // Access aggregated results
   const aggregated = result.aggregated
   if (!aggregated) {
-    console.log('[DestitutionRiskChart] No aggregated results found')
+    console.log('[RiskOfFailureChart] No aggregated results found')
     return []
   }
 
@@ -44,18 +44,18 @@ function transformDestitutionData(
   const timesteps = aggregated.timesteps || []
 
   if (!destitution || !Array.isArray(destitution)) {
-    console.log('[DestitutionRiskChart] No destitution data found')
+    console.log('[RiskOfFailureChart] No destitution data found')
     return []
   }
 
   if (timesteps.length === 0) {
-    console.log('[DestitutionRiskChart] No timesteps found')
+    console.log('[RiskOfFailureChart] No timesteps found')
     return []
   }
 
   if (destitution.length !== timesteps.length) {
     console.warn(
-      '[DestitutionRiskChart] Destitution and timesteps arrays have different lengths',
+      '[RiskOfFailureChart] Destitution and timesteps arrays have different lengths',
       { destitutionLength: destitution.length, timestepsLength: timesteps.length }
     )
   }
@@ -74,30 +74,30 @@ function transformDestitutionData(
     })
     .filter((point: ChartDataPoint) => (point.age as number) <= plan.plan_end_age)
 
-  console.log('[DestitutionRiskChart] Transformed chart data:', data.slice(0, 3), '... (showing first 3)')
+  console.log('[RiskOfFailureChart] Transformed chart data:', data.slice(0, 3), '... (showing first 3)')
   return data
 }
 
-export function DestitutionRiskChart({
+export function RiskOfFailureChart({
   plan,
   simulationResponse,
   isSimulating,
   simulationError,
   height = 400,
   className,
-}: DestitutionRiskChartProps) {
+}: RiskOfFailureChartProps) {
   // Transform destitution data into chart data
   const chartData = useMemo(() => {
     if (!plan) {
-      console.log('[DestitutionRiskChart] No plan provided')
+      console.log('[RiskOfFailureChart] No plan provided')
       return []
     }
     if (!simulationResponse) {
-      console.log('[DestitutionRiskChart] No simulation response')
+      console.log('[RiskOfFailureChart] No simulation response')
       return []
     }
     if (!simulationResponse.result) {
-      console.log('[DestitutionRiskChart] No result in simulation response')
+      console.log('[RiskOfFailureChart] No result in simulation response')
       return []
     }
 
@@ -109,7 +109,7 @@ export function DestitutionRiskChart({
     () => [
       {
         key: 'risk',
-        label: 'Destitution Risk',
+        label: 'Risk of Failure',
         color: '#ef4444', // Red for risk
         visible: true,
       },
@@ -122,7 +122,7 @@ export function DestitutionRiskChart({
       <Card className="flex items-center justify-center h-[400px]">
         <div className="text-center">
           <Spinner size="lg" className="mx-auto mb-4" />
-          <p className="text-gray-600">Calculating destitution risk...</p>
+          <p className="text-gray-600">Calculating risk of failure...</p>
         </div>
       </Card>
     )
@@ -132,11 +132,11 @@ export function DestitutionRiskChart({
     return (
       <Card className="flex items-center justify-center h-[400px]">
         <div className="text-center">
-          <p className="text-red-600 mb-2">Error loading destitution risk</p>
+          <p className="text-red-600 mb-2">Error loading risk of failure</p>
           <p className="text-sm text-gray-600">
             {simulationError instanceof Error
               ? simulationError.message
-              : 'Failed to load destitution risk chart'}
+              : 'Failed to load risk of failure chart'}
           </p>
         </div>
       </Card>
@@ -146,7 +146,7 @@ export function DestitutionRiskChart({
   if (chartData.length === 0) {
     return (
       <Card className="flex items-center justify-center h-[400px]">
-        <p className="text-gray-600">No destitution risk data available</p>
+        <p className="text-gray-600">No risk of failure data available</p>
       </Card>
     )
   }
@@ -157,7 +157,7 @@ export function DestitutionRiskChart({
         data={chartData}
         xAxisKey="age"
         lines={chartLines}
-        title="Destitution Risk"
+        title="Risk of Failure"
         xAxisLabel="Age"
         yAxisLabel="Risk (%)"
         height={height}

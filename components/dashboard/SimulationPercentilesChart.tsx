@@ -1,4 +1,4 @@
-// Portfolio Projection Chart component
+// Simulation Percentiles Chart component
 
 'use client'
 
@@ -24,7 +24,7 @@ function transformSimulationResults(
   useReal: boolean
 ): ChartDataPoint[] {
   if (!result) {
-    console.log('[PortfolioProjectionChart] No simulation result provided')
+    console.log('[SimulationPercentilesChart] No simulation result provided')
     return []
   }
 
@@ -34,21 +34,21 @@ function transformSimulationResults(
   // Access aggregated results
   const aggregated = result.aggregated
   if (!aggregated) {
-    console.log('[PortfolioProjectionChart] No aggregated results found')
+    console.log('[SimulationPercentilesChart] No aggregated results found')
     return []
   }
 
   // Get the appropriate data (real or nominal) with precomputed statistics
   const data = useReal ? aggregated.real : aggregated.nominal
   if (!data) {
-    console.log('[PortfolioProjectionChart] No data found for selected type')
+    console.log('[SimulationPercentilesChart] No data found for selected type')
     return []
   }
 
   // Get timesteps from aggregated
   const timesteps = aggregated.timesteps || []
   if (timesteps.length === 0) {
-    console.log('[PortfolioProjectionChart] No timesteps found')
+    console.log('[SimulationPercentilesChart] No timesteps found')
     return []
   }
 
@@ -66,7 +66,7 @@ function transformSimulationResults(
   const percentile2Array = percentiles[percentile2Key] || []
   const medianArray = percentiles[medianKey] || []
 
-  console.log('[PortfolioProjectionChart] Using precomputed statistics:', {
+  console.log('[SimulationPercentilesChart] Using precomputed statistics:', {
     numTimesteps: timesteps.length,
     percentile1,
     percentile2,
@@ -96,26 +96,26 @@ function transformSimulationResults(
     })
 
   console.log(
-    '[PortfolioProjectionChart] Transformed chart data:',
+    '[SimulationPercentilesChart] Transformed chart data:',
     chartData.slice(0, 3),
     '... (showing first 3)'
   )
   return chartData
 }
 
-export interface PortfolioProjectionChartProps {
+export interface SimulationPercentilesChartProps {
   plan: FinancialPlan | null | undefined
   simulationResponse: SimulationResponse | null | undefined
   isSimulating: boolean
   simulationError: Error | null
 }
 
-export function PortfolioProjectionChart({
+export function SimulationPercentilesChart({
   plan,
   simulationResponse,
   isSimulating,
   simulationError,
-}: PortfolioProjectionChartProps) {
+}: SimulationPercentilesChartProps) {
   // State for percentile inputs
   const [percentile1, setPercentile1] = useState<number>(25)
   const [percentile2, setPercentile2] = useState<number>(75)
@@ -144,16 +144,16 @@ export function PortfolioProjectionChart({
   // Transform simulation results into chart data
   const chartData = useMemo(() => {
     if (!plan) {
-      console.log('[PortfolioProjectionChart] No plan provided')
+      console.log('[SimulationPercentilesChart] No plan provided')
       return []
     }
     if (!simulationResponse) {
-      console.log('[PortfolioProjectionChart] No simulation response')
+      console.log('[SimulationPercentilesChart] No simulation response')
       return []
     }
-    console.log('[PortfolioProjectionChart] Simulation response:', simulationResponse)
+    console.log('[SimulationPercentilesChart] Simulation response:', simulationResponse)
     if (!simulationResponse.result) {
-      console.log('[PortfolioProjectionChart] No result in simulation response')
+      console.log('[SimulationPercentilesChart] No result in simulation response')
       return []
     }
 
@@ -227,7 +227,7 @@ export function PortfolioProjectionChart({
             data={chartData}
             xAxisKey="age"
             lines={chartLines}
-            title="Portfolio Projection"
+            title="Simulation Percentiles"
             xAxisLabel="Age"
             yAxisLabel="Value ($)"
             height={400}
