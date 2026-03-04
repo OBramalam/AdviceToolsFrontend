@@ -1,21 +1,37 @@
 'use client'
 
-// Chat Interface component
+// Chat Interface component – plan_builder when no plan selected, dashboard when a plan is selected
 
 import { useEffect, useRef, useState } from 'react'
+import { useDashboardContext } from '@/lib/context/DashboardContext'
 import { useChatHistory, useSendMessage, useClearChat, useExportChat } from '@/lib/hooks/useChat'
 import { ChatMessage } from './ChatMessage'
 import { ChatInput } from './ChatInput'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
+import type { ChatContext } from '@/types/api'
 import type { ChatMessage as ChatMessageType } from '@/types/api'
 
+function getChatContext(selectedPlanId: number | null): ChatContext {
+  return selectedPlanId != null ? 'dashboard' : 'plan_builder'
+}
+
 export function ChatInterface() {
-  const { data: messages = [], isLoading: isLoadingHistory } = useChatHistory()
-  const sendMessageMutation = useSendMessage()
-  const clearChatMutation = useClearChat()
+  const { selectedPlanId } = useDashboardContext()
+  const chatContext = getChatContext(selectedPlanId)
+  const planId = selectedPlanId ?? null
+
+  const { data: messages = [], isLoading: isLoadingHistory } = useChatHistory(
+    chatContext,
+    planId
+  )
+  const sendMessageMutation = useSendMessage(chatContext, planId)
+  const clearChatMutation = useClearChat(chatContext, planId)
   const exportChatMutation = useExportChat()
-  const [currentMessage, setCurrentMessage] = useState<ChatMessageType | null>(null)
+
+  const [currentMessage, setCurrentMessage] = useState<ChatMessageType | null>(
+    null
+  )
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -27,20 +43,14 @@ export function ChatInterface() {
   }, [messages, currentMessage])
 
   const handleSend = async (messageText: string) => {
-    // Add user message immediately
     const userMessage: ChatMessageType = {
       role: 'user',
       content: messageText,
     }
     setCurrentMessage(userMessage)
 
-    // Start assistant message
     let assistantContent = ''
-    const assistantMessage: ChatMessageType = {
-      role: 'assistant',
-      content: '',
-    }
-    setCurrentMessage(assistantMessage)
+    setCurrentMessage({ role: 'assistant', content: '' })
 
     try {
       await sendMessageMutation.mutateAsync({
@@ -76,12 +86,19 @@ export function ChatInterface() {
   }
 
   const handleExport = async () => {
+    const isPlanBuilder = chatContext === 'plan_builder'
     try {
       const result = await exportChatMutation.mutateAsync({
-        trigger_parser: true,
+        trigger_parser: isPlanBuilder,
+        context: chatContext,
+        plan_id: planId,
       })
       if (result.success && !result.error) {
-        alert('Chat exported and financial plan created successfully!')
+        if (isPlanBuilder) {
+          alert('Chat exported and financial plan created successfully!')
+        } else {
+          alert('Chat exported successfully.')
+        }
       } else if (result.error) {
         alert(`Chat exported but parsing failed: ${result.error}`)
       }
@@ -96,11 +113,21 @@ export function ChatInterface() {
     displayMessages.push(currentMessage)
   }
 
+  const isPlanBuilder = chatContext === 'plan_builder'
+  const emptyStateText = isPlanBuilder
+    ? 'Start a conversation to build your financial plan'
+    : 'Ask about this plan or how to use the dashboard.'
+
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Chat Header */}
       <div className="flex justify-between items-center p-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold">Financial Planning Assistant</h2>
+        <div>
+          <h2 className="text-lg font-semibold">Financial Planning Assistant</h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {isPlanBuilder ? 'Plan builder' : 'Dashboard'}
+          </p>
+        </div>
         <div className="flex space-x-2">
           <Button
             variant="secondary"
@@ -117,7 +144,7 @@ export function ChatInterface() {
             disabled={exportChatMutation.isPending || messages.length === 0}
             isLoading={exportChatMutation.isPending}
           >
-            Export & Parse
+            {isPlanBuilder ? 'Export & Parse' : 'Export'}
           </Button>
         </div>
       </div>
@@ -130,7 +157,7 @@ export function ChatInterface() {
           </div>
         ) : displayMessages.length === 0 ? (
           <div className="flex justify-center items-center h-full text-gray-500">
-            <p>Start a conversation to build your financial plan</p>
+            <p>{emptyStateText}</p>
           </div>
         ) : (
           displayMessages.map((message, index) => (
@@ -148,4 +175,3 @@ export function ChatInterface() {
     </div>
   )
 }
-

@@ -92,8 +92,12 @@ export interface LogoutRequest {
   refresh_token: string
 }
 
+export type ChatContext = 'plan_builder' | 'dashboard'
+
 export interface ChatMessageRequest {
   message: string
+  context?: ChatContext
+  plan_id?: number | null
 }
 
 export interface ChatHistoryResponse {
@@ -102,6 +106,8 @@ export interface ChatHistoryResponse {
 
 export interface ExportChatRequest {
   trigger_parser: boolean
+  context?: ChatContext
+  plan_id?: number | null
 }
 
 export interface ExportChatResponse {

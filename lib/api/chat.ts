@@ -9,10 +9,25 @@ import type {
   ChatHistoryResponse,
   ExportChatRequest,
   ExportChatResponse,
+  ChatContext,
 } from '@/types/api'
 
-export async function getChatHistory(): Promise<ChatMessage[]> {
-  const response = await apiClient.get<ChatHistoryResponse>('/chat/history')
+function chatHistoryParams(context: ChatContext, planId: number | null): string {
+  const params = new URLSearchParams()
+  params.set('context', context)
+  if (context === 'dashboard' && planId != null) {
+    params.set('plan_id', String(planId))
+  }
+  return params.toString()
+}
+
+export async function getChatHistory(
+  context: ChatContext,
+  planId: number | null
+): Promise<ChatMessage[]> {
+  const query = chatHistoryParams(context, planId)
+  const url = query ? `/chat/history?${query}` : '/chat/history'
+  const response = await apiClient.get<ChatHistoryResponse>(url)
   return response.data.messages
 }
 
@@ -68,12 +83,14 @@ export async function sendMessage(
   }
 }
 
-export async function clearChatHistory(): Promise<{
-  success: boolean
-  message: string
-}> {
+export async function clearChatHistory(
+  context: ChatContext,
+  planId: number | null
+): Promise<{ success: boolean; message: string }> {
+  const query = chatHistoryParams(context, planId)
+  const url = query ? `/chat/history?${query}` : '/chat/history'
   const response = await apiClient.delete<{ success: boolean; message: string }>(
-    '/chat/history'
+    url
   )
   return response.data
 }

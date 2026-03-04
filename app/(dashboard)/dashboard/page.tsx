@@ -26,14 +26,14 @@ import {
 } from '@/lib/hooks/useFinancialPlans'
 import { useCashFlows } from '@/lib/hooks/useCashFlows'
 import { useRunSimulation } from '@/lib/hooks/useSimulation'
+import { useDashboardContext } from '@/lib/context/DashboardContext'
 import { CashFlow, FinancialPlan } from '@/types/api'
 
 export default function DashboardPage() {
+  const { selectedPlanId, setSelectedPlanId } = useDashboardContext()
+
   // Fetch all financial plans
   const { data: plans, isLoading: plansLoading } = useFinancialPlans()
-
-  // State for selected plan ID
-  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null)
 
   const duplicatePlanMutation = useDuplicateFinancialPlan()
   const deletePlanMutation = useDeleteFinancialPlan()
@@ -43,15 +43,20 @@ export default function DashboardPage() {
   const [nameDraft, setNameDraft] = useState<string>('')
   const [showCreateView, setShowCreateView] = useState(false)
 
-  // Set default selected plan when plans load
+  // Set default selected plan when plans load (not when user has opened "New plan" create view)
   useEffect(() => {
-    if (plans && plans.length > 0 && !selectedPlanId) {
+    if (
+      plans &&
+      plans.length > 0 &&
+      !selectedPlanId &&
+      !showCreateView
+    ) {
       const firstPlanId = plans[0].id
       if (firstPlanId) {
         setSelectedPlanId(firstPlanId)
       }
     }
-  }, [plans, selectedPlanId])
+  }, [plans, selectedPlanId, showCreateView, setSelectedPlanId])
 
   // Fetch selected plan details
   const {
@@ -342,6 +347,7 @@ export default function DashboardPage() {
               size="sm"
               className="w-full sm:w-auto"
               onClick={() => {
+                setSelectedPlanId(null)
                 setShowCreateView(true)
               }}
             >

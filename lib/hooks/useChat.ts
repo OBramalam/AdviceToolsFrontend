@@ -1,17 +1,21 @@
 // Chat React Query hooks
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { ChatMessageRequest } from '@/types/api'
+import type { ChatContext, ChatMessageRequest } from '@/types/api'
 import * as chatApi from '@/lib/api/chat'
 
-export function useChatHistory() {
+function chatHistoryQueryKey(context: ChatContext, planId: number | null) {
+  return ['chatHistory', context, planId ?? null] as const
+}
+
+export function useChatHistory(context: ChatContext, planId: number | null) {
   return useQuery({
-    queryKey: ['chatHistory'],
-    queryFn: chatApi.getChatHistory,
+    queryKey: chatHistoryQueryKey(context, planId),
+    queryFn: () => chatApi.getChatHistory(context, planId),
   })
 }
 
-export function useSendMessage() {
+export function useSendMessage(context: ChatContext, planId: number | null) {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -19,23 +23,26 @@ export function useSendMessage() {
       message,
       onChunk,
     }: ChatMessageRequest & { onChunk?: (chunk: string) => void }) => {
-      return chatApi.sendMessage({ message }, onChunk)
+      return chatApi.sendMessage(
+        { message, context, plan_id: planId },
+        onChunk
+      )
     },
     onSuccess: () => {
-      // Invalidate chat history to refetch
-      queryClient.invalidateQueries({ queryKey: ['chatHistory'] })
+      queryClient.invalidateQueries({
+        queryKey: chatHistoryQueryKey(context, planId),
+      })
     },
   })
 }
 
-export function useClearChat() {
+export function useClearChat(context: ChatContext, planId: number | null) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: chatApi.clearChatHistory,
+    mutationFn: () => chatApi.clearChatHistory(context, planId),
     onSuccess: () => {
-      // Clear chat history from cache
-      queryClient.setQueryData(['chatHistory'], [])
+      queryClient.setQueryData(chatHistoryQueryKey(context, planId), [])
     },
   })
 }
