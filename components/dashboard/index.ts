@@ -15,4 +15,6 @@ export { ChartCarousel } from './ChartCarousel'
 export type { ChartCarouselProps } from './ChartCarousel'
 export { RiskOfFailureChart } from './RiskOfFailureChart'
 export type { RiskOfFailureChartProps } from './RiskOfFailureChart'
+export { FileUploadSection } from './FileUploadSection'
+export type { FileUploadSectionProps } from './FileUploadSection'
 

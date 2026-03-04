@@ -124,6 +124,14 @@ export interface SimulationResponse {
   traceback?: string // Full traceback if available (for debugging)
 }
 
+// Upload / parsing types
+export interface UploadResponse {
+  success: boolean
+  financial_plan: FinancialPlan
+  cash_flows: CashFlow[]
+  adviser_config: AdviserConfig
+}
+
 // Portfolio Types
 export interface SimulationPortfolioWeights {
   step: number // Time step (year) for this weight configuration

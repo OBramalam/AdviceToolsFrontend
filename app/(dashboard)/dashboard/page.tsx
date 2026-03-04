@@ -8,12 +8,13 @@ import { Spinner } from '@/components/ui/Spinner'
 import { Select } from '@/components/ui/Select'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
-import { Copy, Trash2 } from 'lucide-react'
+import { Copy, Trash2, Plus } from 'lucide-react'
 import {
   GeneralInfoTable,
   IncomeTable,
   ExpensesTable,
   ChartCarousel,
+  FileUploadSection,
 } from '@/components/dashboard'
 import { PortfolioManager } from '@/components/portfolios/PortfolioManager'
 import {
@@ -40,6 +41,7 @@ export default function DashboardPage() {
 
   const [isEditingName, setIsEditingName] = useState(false)
   const [nameDraft, setNameDraft] = useState<string>('')
+  const [showCreateView, setShowCreateView] = useState(false)
 
   // Set default selected plan when plans load
   useEffect(() => {
@@ -144,8 +146,11 @@ export default function DashboardPage() {
 
   const isLoading = plansLoading || planLoading || cashFlowsLoading
 
-  // Show empty state if no plans
-  if (!isLoading && (!plans || plans.length === 0)) {
+  const shouldShowCreateView =
+    !isLoading && (showCreateView || !plans || plans.length === 0)
+
+  // Show empty state / create-new-plan view
+  if (shouldShowCreateView) {
     return (
       <div className="h-full">
         <Card className="h-full">
@@ -154,14 +159,24 @@ export default function DashboardPage() {
               Welcome to Your Dashboard
             </h2>
             <p className="text-gray-600 mb-8">
-              Use the chat interface on the right to start building your financial plan.
-              Once you&apos;ve completed the conversation, you can export it to
-              create your financial plan.
+              You can create a financial plan by uploading a conversation
+              document or by using the chat interface on the right.
             </p>
-            <div className="space-y-2 text-left text-sm text-gray-500">
-              <p>• Chat with the AI assistant to provide your financial information</p>
-              <p>• The assistant will help you build a comprehensive plan</p>
-              <p>• Export the conversation to create your financial plan</p>
+            <div className="flex flex-col items-center gap-8 w-full max-w-2xl">
+              <FileUploadSection
+                onUploadSuccess={(planId) => {
+                  setSelectedPlanId(planId)
+                  setShowCreateView(false)
+                }}
+              />
+              <div className="space-y-2 text-left text-sm text-gray-500">
+                <p>
+                  • Alternatively, chat with the AI assistant to provide your
+                  financial information
+                </p>
+                <p>• The assistant will help you build a comprehensive plan</p>
+                <p>• Export the conversation to create your financial plan</p>
+              </div>
             </div>
           </div>
         </Card>
@@ -304,21 +319,36 @@ export default function DashboardPage() {
               <p className="text-gray-600 mt-1">{selectedPlan.description}</p>
             )}
           </div>
-          {plans && plans.length > 0 && (
-            <div className="w-full sm:w-64">
-              <Select
-                label="Select Financial Plan"
-                value={selectedPlanId ?? ''}
-                onChange={(e) => {
-                  const newPlanId = parseInt(e.target.value, 10)
-                  if (!isNaN(newPlanId)) {
-                    setSelectedPlanId(newPlanId)
-                  }
-                }}
-                options={planOptions}
-              />
-            </div>
-          )}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {plans && plans.length > 0 && (
+              <div className="w-full sm:w-64">
+                <Select
+                  label="Select Financial Plan"
+                  value={selectedPlanId ?? ''}
+                  onChange={(e) => {
+                    const newPlanId = parseInt(e.target.value, 10)
+                    if (!isNaN(newPlanId)) {
+                      setSelectedPlanId(newPlanId)
+                      setShowCreateView(false)
+                    }
+                  }}
+                  options={planOptions}
+                />
+              </div>
+            )}
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              className="w-full sm:w-auto"
+              onClick={() => {
+                setShowCreateView(true)
+              }}
+            >
+              <Plus className="w-4 h-4 mr-1" aria-hidden="true" />
+              New plan
+            </Button>
+          </div>
         </div>
 
         {/* General Information */}
