@@ -1,10 +1,21 @@
 'use client'
 
-// File upload section for creating a plan from a .txt conversation file
+// File upload section for creating a plan from a document (PDF, DOC, TXT, images, etc.)
 
 import { useState, ChangeEvent, FormEvent } from 'react'
 import { Button } from '@/components/ui/Button'
 import { useUploadConversationFile } from '@/lib/hooks/useUpload'
+
+const ALLOWED_EXTENSIONS = [
+  '.pdf', '.doc', '.docx', '.txt', '.rtf', '.html', '.csv', '.tsv',
+  '.xlsx', '.xls', '.ods', '.ppt', '.pptx', '.png', '.jpg', '.jpeg',
+  '.gif', '.bmp', '.tiff', '.webp', '.svg', '.epub', '.xml',
+]
+
+const ACCEPT_ATTR = ALLOWED_EXTENSIONS.join(',')
+
+const MAX_SIZE_MB = 25
+const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024
 
 export interface FileUploadSectionProps {
   onUploadSuccess?: (planId: number) => void
@@ -24,17 +35,17 @@ export function FileUploadSection({ onUploadSuccess }: FileUploadSectionProps) {
       return
     }
 
-    // Validate file type (.txt only)
-    if (!file.name.toLowerCase().endsWith('.txt')) {
-      setError('Only .txt files are supported.')
+    const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'))
+    if (!ext || !ALLOWED_EXTENSIONS.includes(ext)) {
+      setError(
+        'Unsupported file type. Supported: PDF, DOC, DOCX, TXT, RTF, HTML, CSV, TSV, XLSX, XLS, ODS, PPT, PPTX, PNG, JPG, GIF, BMP, TIFF, WEBP, SVG, EPUB, XML.'
+      )
       setSelectedFile(null)
       return
     }
 
-    // Validate size (16MB max)
-    const maxSizeBytes = 16 * 1024 * 1024
-    if (file.size > maxSizeBytes) {
-      setError('File is too large. Maximum size is 16MB.')
+    if (file.size > MAX_SIZE_BYTES) {
+      setError(`File is too large. Maximum size is ${MAX_SIZE_MB}MB.`)
       setSelectedFile(null)
       return
     }
@@ -47,7 +58,7 @@ export function FileUploadSection({ onUploadSuccess }: FileUploadSectionProps) {
     setError(null)
 
     if (!selectedFile) {
-      setError('Please select a .txt file to upload.')
+      setError('Please select a supported file to upload.')
       return
     }
 
@@ -79,16 +90,16 @@ export function FileUploadSection({ onUploadSuccess }: FileUploadSectionProps) {
           className="flex flex-col items-center justify-center px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
         >
           <span className="text-sm font-medium text-gray-700">
-            {selectedFile ? 'Change file' : 'Upload conversation (.txt)'}
+            {selectedFile ? 'Change file' : 'Upload document'}
           </span>
           <span className="mt-1 text-xs text-gray-500">
-            Only .txt files, up to 16MB
+            PDF, DOC, DOCX, TXT, images, and more. Max {MAX_SIZE_MB}MB.
           </span>
         </label>
         <input
           id="plan-upload"
           type="file"
-          accept=".txt"
+          accept={ACCEPT_ATTR}
           className="hidden"
           onChange={handleFileChange}
         />
