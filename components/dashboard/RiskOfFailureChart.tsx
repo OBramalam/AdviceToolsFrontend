@@ -9,6 +9,7 @@ import { LineChart } from '@/components/charts'
 import { ChartDataPoint, LineSeries } from '@/types/charts'
 import { FinancialPlan, SimulationResponse } from '@/types/api'
 import { timestepToAge, TimestepUnit } from '@/lib/utils/timestep'
+import { buildYearTicks } from '@/lib/utils/chartAxis'
 
 export interface RiskOfFailureChartProps {
   plan: FinancialPlan | null | undefined
@@ -64,7 +65,9 @@ function transformDestitutionData(
   const data: ChartDataPoint[] = timesteps
     .map((timestep: number, index: number) => {
       // Convert timestep to age using the timestep_unit from the response
-      const age = timestepToAge(timestep, plan.start_age, timestepUnit)
+      const age = Math.floor(
+        timestepToAge(timestep, plan.start_age, timestepUnit)
+      )
       const risk = destitution[index] !== undefined ? destitution[index] : 0
 
       return {
@@ -117,6 +120,11 @@ export function RiskOfFailureChart({
     []
   )
 
+  const xAxisTicks = useMemo(() => {
+    if (!plan) return undefined
+    return buildYearTicks(plan.start_age, plan.plan_end_age)
+  }, [plan])
+
   if (isSimulating) {
     return (
       <Card className="flex items-center justify-center h-[400px]">
@@ -164,6 +172,7 @@ export function RiskOfFailureChart({
         showGridlines={true}
         enableGridlineToggle={true}
         showDots={false}
+        xAxisTicks={xAxisTicks}
       />
     </Card>
   )

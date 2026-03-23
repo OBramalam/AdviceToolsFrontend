@@ -10,6 +10,7 @@ import { ChartDataPoint, LineSeries } from '@/types/charts'
 import { FinancialPlan } from '@/types/api'
 import { SimulationResponse } from '@/types/api'
 import { timestepToAge, TimestepUnit } from '@/lib/utils/timestep'
+import { buildYearTicks } from '@/lib/utils/chartAxis'
 
 // Available percentiles from backend (1, 99, and every 5th percentile)
 const AVAILABLE_PERCENTILES = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]
@@ -79,7 +80,9 @@ function transformSimulationResults(
   const chartData: ChartDataPoint[] = timesteps
     .map((timestep: number) => {
       // Convert timestep to age using the timestep_unit from the response
-      const age = timestepToAge(timestep, plan.start_age, timestepUnit)
+      const age = Math.floor(
+        timestepToAge(timestep, plan.start_age, timestepUnit)
+      )
 
       // Direct access to precomputed values - no calculations!
       return {
@@ -197,6 +200,11 @@ export function SimulationPercentilesChart({
     [percentile1, percentile2]
   )
 
+  const xAxisTicks = useMemo(() => {
+    if (!plan) return undefined
+    return buildYearTicks(plan.start_age, plan.plan_end_age)
+  }, [plan])
+
   return (
     <Card>
       {isSimulating ? (
@@ -235,6 +243,7 @@ export function SimulationPercentilesChart({
             onToggleNominalReal={() => setUseReal(!useReal)}
             showNominalRealToggle={true}
             showDots={false}
+            xAxisTicks={xAxisTicks}
             tooltipFormatter={tooltipFormatter}
           />
           {/* Percentile Controls - Below Legend */}

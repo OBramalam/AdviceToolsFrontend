@@ -31,6 +31,8 @@ export interface LineChartProps extends Omit<BaseChartProps, 'children'> {
   onToggleNominalReal?: () => void
   showNominalRealToggle?: boolean
   showDots?: boolean // Whether to show dots on the line (default: true)
+  xAxisTicks?: number[]
+  xAxisTickFormatter?: (value: any, index: number) => string
   // Optional custom tooltip formatter (Recharts Tooltip formatter signature)
   tooltipFormatter?: (value: any, name: string | undefined, props: any) => any
 }
@@ -51,6 +53,8 @@ export function LineChart({
   onToggleNominalReal,
   showNominalRealToggle = false,
   showDots = true,
+  xAxisTicks,
+  xAxisTickFormatter,
   tooltipFormatter,
 }: LineChartProps) {
   // Track gridline visibility
@@ -188,6 +192,8 @@ export function LineChart({
             dataKey={xAxisKey}
             stroke="#6b7280"
             tick={{ fill: '#6b7280', fontSize: 12 }}
+            ticks={xAxisTicks}
+            tickFormatter={xAxisTickFormatter}
             label={
               xAxisLabel
                 ? {

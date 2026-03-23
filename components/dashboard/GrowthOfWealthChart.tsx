@@ -20,6 +20,7 @@ import { BaseChart, BaseChartProps } from '@/components/charts/BaseChart'
 import { FinancialPlan, SimulationResponse, Portfolio } from '@/types/api'
 import { usePortfolios } from '@/lib/hooks/usePortfolios'
 import { timestepToAge, TimestepUnit } from '@/lib/utils/timestep'
+import { buildYearTicks } from '@/lib/utils/chartAxis'
 import { clsx } from 'clsx'
 
 // Color palette for portfolios
@@ -101,7 +102,9 @@ export function GrowthOfWealthChart({
     const data = timesteps
       .map((timestep: number) => {
         // Convert timestep to age using the timestep_unit from the response
-        const age = timestepToAge(timestep, plan.start_age, timestepUnit)
+        const age = Math.floor(
+          timestepToAge(timestep, plan.start_age, timestepUnit)
+        )
         const dataPoint: Record<string, any> = {
           age: age,
         }
@@ -150,6 +153,11 @@ export function GrowthOfWealthChart({
       }
     )
   }, [simulationResponse, portfolioIdToName])
+
+  const xAxisTicks = useMemo(() => {
+    if (!plan) return undefined
+    return buildYearTicks(plan.start_age, plan.plan_end_age)
+  }, [plan])
 
   if (isSimulating) {
     return (
@@ -254,6 +262,7 @@ export function GrowthOfWealthChart({
               dataKey="age"
               stroke="#6b7280"
               tick={{ fill: '#6b7280', fontSize: 12 }}
+              ticks={xAxisTicks}
               label={{
                 value: 'Age',
                 position: 'insideBottom',
