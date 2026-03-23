@@ -21,6 +21,7 @@ import { FinancialPlan, SimulationResponse, Portfolio } from '@/types/api'
 import { usePortfolios } from '@/lib/hooks/usePortfolios'
 import { timestepToAge, TimestepUnit } from '@/lib/utils/timestep'
 import { buildYearTicks } from '@/lib/utils/chartAxis'
+import { getYAxisFormatConfig } from '@/lib/utils/yAxisFormat'
 import { clsx } from 'clsx'
 
 // Color palette for portfolios
@@ -159,6 +160,22 @@ export function GrowthOfWealthChart({
     return buildYearTicks(plan.start_age, plan.plan_end_age)
   }, [plan])
 
+  const yAxisFormat = useMemo(() => {
+    const maxAbs = chartData.reduce((currentMax: number, point: Record<string, any>) => {
+      const pointValues = Object.entries(point)
+        .filter(([key]) => key !== 'age')
+        .map(([, value]) =>
+          typeof value === 'number' ? Math.abs(value) : Math.abs(Number(value))
+        )
+        .filter((value) => isFinite(value))
+
+      const pointMax = pointValues.length > 0 ? Math.max(...pointValues) : 0
+      return Math.max(currentMax, pointMax)
+    }, 0)
+
+    return getYAxisFormatConfig(maxAbs, 'Value ($)')
+  }, [chartData])
+
   if (isSimulating) {
     return (
       <Card className={className}>
@@ -210,6 +227,7 @@ export function GrowthOfWealthChart({
         {/* Nominal/Real Toggle */}
         <div className="flex justify-end gap-2 mb-2">
           <button
+            data-export-hide="true"
             onClick={() => setUseReal(!useReal)}
             className={clsx(
               'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
@@ -273,10 +291,14 @@ export function GrowthOfWealthChart({
             <YAxis
               stroke="#6b7280"
               tick={{ fill: '#6b7280', fontSize: 12 }}
+              width={yAxisFormat.width}
+              tickFormatter={yAxisFormat.tickFormatter}
               label={{
-                value: 'Value ($)',
+                value: yAxisFormat.label,
                 angle: -90,
-                position: 'insideLeft',
+                position: 'left',
+                offset: 6,
+                dx: -6,
                 style: { fill: '#6b7280', fontSize: 12 },
               }}
             />

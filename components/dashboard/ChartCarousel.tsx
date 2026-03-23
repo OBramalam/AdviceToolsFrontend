@@ -2,14 +2,15 @@
 
 'use client'
 
-import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Play } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight, Download, Play } from 'lucide-react'
 import { SimulationPercentilesChart } from './SimulationPercentilesChart'
 import { GrowthOfWealthChart } from './GrowthOfWealthChart'
 import { RiskOfFailureChart } from './RiskOfFailureChart'
 // import { FinalWealthDistributionChart } from './FinalWealthDistributionChart'
 import { SimulationPercentilesChartProps } from './SimulationPercentilesChart'
 import { clsx } from 'clsx'
+import { exportElementAsPng } from '@/lib/utils/chartExport'
 
 export interface ChartCarouselProps {
   plan: SimulationPercentilesChartProps['plan']
@@ -35,6 +36,8 @@ export function ChartCarousel({
   onRunSimulation,
 }: ChartCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState<number>(0)
+  const [isExporting, setIsExporting] = useState(false)
+  const chartContainerRef = useRef<HTMLDivElement>(null)
 
   const currentChart = CHARTS[currentIndex]
 
@@ -48,6 +51,22 @@ export function ChartCarousel({
 
   const goToChart = (index: number) => {
     setCurrentIndex(index)
+  }
+
+  const handleExport = async () => {
+    if (!chartContainerRef.current) return
+    setIsExporting(true)
+    try {
+      const baseName = plan?.name
+        ? `${plan.name}-${currentChart.name}`
+        : currentChart.name
+      await exportElementAsPng(chartContainerRef.current, baseName)
+    } catch (error) {
+      console.error('Failed to export chart image:', error)
+      alert('Failed to export chart image. Please try again.')
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   return (
@@ -76,8 +95,24 @@ export function ChartCarousel({
       </div>
 
       {/* Run Simulation Button */}
-      {onRunSimulation && plan?.id && (
-        <div className="flex justify-end mb-4">
+      <div className="flex justify-end gap-2 mb-4">
+        <button
+          onClick={handleExport}
+          disabled={isExporting}
+          className={clsx(
+            'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors',
+            'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+            isExporting
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-gray-700 text-white hover:bg-gray-800'
+          )}
+          type="button"
+          aria-label="Export chart as image"
+        >
+          <Download className="w-4 h-4" />
+          <span>{isExporting ? 'Exporting...' : 'Export image'}</span>
+        </button>
+        {onRunSimulation && plan?.id && (
           <button
             onClick={onRunSimulation}
             disabled={isSimulating}
@@ -94,8 +129,8 @@ export function ChartCarousel({
             <Play className="w-4 h-4" />
             <span>{isSimulating ? 'Running...' : 'Run Simulation'}</span>
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Chart Indicators */}
       <div className="flex justify-center gap-2 mb-2">
@@ -119,7 +154,7 @@ export function ChartCarousel({
       </div>
 
       {/* Chart Container */}
-      <div className="relative">
+      <div ref={chartContainerRef} className="relative">
         {currentChart.id === 'projection' && (
           <SimulationPercentilesChart
             plan={plan}

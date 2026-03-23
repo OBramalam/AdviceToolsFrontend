@@ -247,7 +247,10 @@ export function SimulationPercentilesChart({
             tooltipFormatter={tooltipFormatter}
           />
           {/* Percentile Controls - Below Legend */}
-          <div className="mt-8 flex flex-wrap gap-3 items-center justify-center">
+          <div
+            data-export-hide="true"
+            className="mt-8 flex flex-wrap gap-3 items-center justify-center"
+          >
             <div className="flex items-center gap-2">
               <label className="text-xs text-gray-600">Percentile 1:</label>
               <select

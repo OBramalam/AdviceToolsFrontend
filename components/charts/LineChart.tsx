@@ -16,6 +16,7 @@ import {
 import { Grid3x3 } from 'lucide-react'
 import { BaseChart, BaseChartProps } from './BaseChart'
 import { ChartDataPoint, LineSeries } from '@/types/charts'
+import { getYAxisFormatConfig } from '@/lib/utils/yAxisFormat'
 import { clsx } from 'clsx'
 
 export interface LineChartProps extends Omit<BaseChartProps, 'children'> {
@@ -89,6 +90,19 @@ export function LineChart({
     [lines, visibleLines]
   )
 
+  const yAxisFormat = useMemo(() => {
+    const maxAbs = data.reduce((currentMax, point) => {
+      const pointMax = lines.reduce((lineMax, line) => {
+        const rawValue = (point as any)[line.key]
+        const num = typeof rawValue === 'number' ? rawValue : Number(rawValue)
+        return isFinite(num) ? Math.max(lineMax, Math.abs(num)) : lineMax
+      }, 0)
+      return Math.max(currentMax, pointMax)
+    }, 0)
+
+    return getYAxisFormatConfig(maxAbs, yAxisLabel ?? '')
+  }, [data, lines, yAxisLabel])
+
   // Custom legend click handler
   const handleLegendClick = (e: any) => {
     const lineKey = e.dataKey
@@ -139,6 +153,7 @@ export function LineChart({
         <div className="flex justify-end gap-2 mb-2">
           {showNominalRealToggle && onToggleNominalReal && (
             <button
+              data-export-hide="true"
               onClick={onToggleNominalReal}
               className={clsx(
                 'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
@@ -155,6 +170,7 @@ export function LineChart({
           )}
           {enableGridlineToggle && (
             <button
+              data-export-hide="true"
               onClick={() => setShowGridlines(!showGridlines)}
               className={clsx(
                 'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
@@ -208,12 +224,16 @@ export function LineChart({
           <YAxis
             stroke="#6b7280"
             tick={{ fill: '#6b7280', fontSize: 12 }}
+            width={yAxisFormat.width}
+            tickFormatter={yAxisFormat.tickFormatter}
             label={
               yAxisLabel
                 ? {
-                    value: yAxisLabel,
+                    value: yAxisFormat.label,
                     angle: -90,
-                    position: 'insideLeft',
+                    position: 'left',
+                    offset: 6,
+                    dx: -6,
                     style: { fill: '#6b7280', fontSize: 12 },
                   }
                 : undefined
