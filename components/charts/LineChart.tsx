@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, ReactNode } from 'react'
 import {
   LineChart as RechartsLineChart,
   Line,
@@ -27,10 +27,13 @@ export interface LineChartProps extends Omit<BaseChartProps, 'children'> {
   enableGridlineToggle?: boolean // Whether to show UI control for gridlines (default: true)
   xAxisLabel?: string
   yAxisLabel?: string
+  subtitle?: string
   // Nominal/Real toggle
   useReal?: boolean
   onToggleNominalReal?: () => void
   showNominalRealToggle?: boolean
+  customControls?: ReactNode
+  showLegend?: boolean
   showDots?: boolean // Whether to show dots on the line (default: true)
   xAxisTicks?: number[]
   xAxisTickFormatter?: (value: any, index: number) => string
@@ -46,6 +49,7 @@ export function LineChart({
   enableGridlineToggle = true,
   xAxisLabel,
   yAxisLabel,
+  subtitle,
   title,
   className,
   height = 400,
@@ -53,6 +57,8 @@ export function LineChart({
   useReal = false,
   onToggleNominalReal,
   showNominalRealToggle = false,
+  customControls,
+  showLegend = true,
   showDots = true,
   xAxisTicks,
   xAxisTickFormatter,
@@ -147,10 +153,17 @@ export function LineChart({
   }
 
   return (
-    <BaseChart title={title} className={className} height={height} margin={margin}>
+    <BaseChart
+      title={title}
+      subtitle={subtitle}
+      className={className}
+      height={height}
+      margin={margin}
+    >
       {/* Chart Controls */}
-      {(enableGridlineToggle || showNominalRealToggle) && (
+      {(enableGridlineToggle || showNominalRealToggle || customControls) && (
         <div className="flex justify-end gap-2 mb-2">
+          {customControls}
           {showNominalRealToggle && onToggleNominalReal && (
             <button
               data-export-hide="true"
@@ -196,7 +209,7 @@ export function LineChart({
             top: margin?.top ?? 20,
             right: margin?.right ?? 30,
             left: margin?.left ?? 20,
-            bottom: margin?.bottom ?? 20,
+            bottom: margin?.bottom ?? 40,
           }}
         >
           <CartesianGrid
@@ -249,10 +262,12 @@ export function LineChart({
             labelStyle={{ color: '#374151', fontWeight: 600 }}
             formatter={tooltipFormatter}
           />
-          <Legend
-            content={renderLegend}
-            wrapperStyle={{ paddingTop: '1rem' }}
-          />
+          {showLegend && (
+            <Legend
+              content={renderLegend}
+              wrapperStyle={{ paddingTop: '1rem' }}
+            />
+          )}
           {visibleLineSeries.map((line) => (
             <Line
               key={line.key}

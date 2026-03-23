@@ -6,6 +6,7 @@ import { clsx } from 'clsx'
 export interface BaseChartProps {
   children: ReactNode
   title?: string
+  subtitle?: string
   className?: string
   height?: number
   margin?: {
@@ -26,6 +27,7 @@ const DEFAULT_MARGIN = {
 export function BaseChart({
   children,
   title,
+  subtitle,
   className,
   height = 400,
   margin = DEFAULT_MARGIN,
@@ -40,7 +42,12 @@ export function BaseChart({
   return (
     <div className={clsx('w-full', className)}>
       {title && (
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          {subtitle && (
+            <p className="text-sm text-gray-600 mt-1">{subtitle}</p>
+          )}
+        </div>
       )}
       <div style={{ width: '100%', height: `${height}px` }}>
         {children}

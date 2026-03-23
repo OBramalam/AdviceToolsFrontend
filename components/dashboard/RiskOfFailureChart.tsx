@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Spinner } from '@/components/ui/Spinner'
 import { LineChart } from '@/components/charts'
@@ -10,6 +10,7 @@ import { ChartDataPoint, LineSeries } from '@/types/charts'
 import { FinancialPlan, SimulationResponse } from '@/types/api'
 import { timestepToAge, TimestepUnit } from '@/lib/utils/timestep'
 import { buildYearTicks } from '@/lib/utils/chartAxis'
+import { clsx } from 'clsx'
 
 export interface RiskOfFailureChartProps {
   plan: FinancialPlan | null | undefined
@@ -20,10 +21,30 @@ export interface RiskOfFailureChartProps {
   className?: string
 }
 
-// Transform destitution data into chart data
-function transformDestitutionData(
+type RiskMetric = 'destitution' | 'below_target'
+
+function metricLabel(metric: RiskMetric): string {
+  return metric === 'destitution' ? 'Destitution Risk' : 'Plan Failure Risk'
+}
+
+function metricSubtitle(metric: RiskMetric, targetValue: number): string {
+  if (metric === 'destitution') {
+    return 'Likelihood that portfolio value falls below $0.'
+  }
+  const formattedTarget = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(targetValue)
+  return `Likelihood that portfolio value falls below ${formattedTarget}.`
+}
+
+// Transform selected risk metric data into chart data
+function transformRiskData(
   result: any,
-  plan: FinancialPlan
+  plan: FinancialPlan,
+  metric: RiskMetric
 ): ChartDataPoint[] {
   if (!result) {
     console.log('[RiskOfFailureChart] No simulation result provided')
@@ -40,12 +61,14 @@ function transformDestitutionData(
     return []
   }
 
-  // Get destitution array and timesteps
-  const destitution = aggregated.destitution
+  // Get selected risk array and timesteps
+  const riskSeries = metric === 'destitution'
+    ? aggregated.destitution
+    : aggregated.below_target
   const timesteps = aggregated.timesteps || []
 
-  if (!destitution || !Array.isArray(destitution)) {
-    console.log('[RiskOfFailureChart] No destitution data found')
+  if (!riskSeries || !Array.isArray(riskSeries)) {
+    console.log(`[RiskOfFailureChart] No ${metric} data found`)
     return []
   }
 
@@ -54,10 +77,10 @@ function transformDestitutionData(
     return []
   }
 
-  if (destitution.length !== timesteps.length) {
+  if (riskSeries.length !== timesteps.length) {
     console.warn(
-      '[RiskOfFailureChart] Destitution and timesteps arrays have different lengths',
-      { destitutionLength: destitution.length, timestepsLength: timesteps.length }
+      `[RiskOfFailureChart] ${metric} and timesteps arrays have different lengths`,
+      { riskLength: riskSeries.length, timestepsLength: timesteps.length }
     )
   }
 
@@ -68,7 +91,7 @@ function transformDestitutionData(
       const age = Math.floor(
         timestepToAge(timestep, plan.start_age, timestepUnit)
       )
-      const risk = destitution[index] !== undefined ? destitution[index] : 0
+      const risk = riskSeries[index] !== undefined ? riskSeries[index] : 0
 
       return {
         age: age,
@@ -89,7 +112,9 @@ export function RiskOfFailureChart({
   height = 400,
   className,
 }: RiskOfFailureChartProps) {
-  // Transform destitution data into chart data
+  const [selectedMetric, setSelectedMetric] = useState<RiskMetric>('destitution')
+
+  // Transform selected risk metric data into chart data
   const chartData = useMemo(() => {
     if (!plan) {
       console.log('[RiskOfFailureChart] No plan provided')
@@ -104,20 +129,20 @@ export function RiskOfFailureChart({
       return []
     }
 
-    return transformDestitutionData(simulationResponse.result, plan)
-  }, [plan, simulationResponse])
+    return transformRiskData(simulationResponse.result, plan, selectedMetric)
+  }, [plan, simulationResponse, selectedMetric])
 
   // Chart line series configuration
   const chartLines: LineSeries[] = useMemo(
     () => [
       {
         key: 'risk',
-        label: 'Risk of Failure',
+        label: metricLabel(selectedMetric),
         color: '#ef4444', // Red for risk
         visible: true,
       },
     ],
-    []
+    [selectedMetric]
   )
 
   const xAxisTicks = useMemo(() => {
@@ -166,11 +191,36 @@ export function RiskOfFailureChart({
         xAxisKey="age"
         lines={chartLines}
         title="Risk of Failure"
+        subtitle={metricSubtitle(selectedMetric, plan?.portfolio_target_value ?? 0)}
         xAxisLabel="Age"
         yAxisLabel="Risk (%)"
         height={height}
+        customControls={
+          <button
+            data-export-hide="true"
+            onClick={() =>
+              setSelectedMetric((current) =>
+                current === 'destitution' ? 'below_target' : 'destitution'
+              )
+            }
+            className={clsx(
+              'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+              'hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+              'text-gray-700 bg-gray-50'
+            )}
+            type="button"
+            aria-label="Toggle risk metric"
+          >
+            <span>
+              {selectedMetric === 'destitution'
+                ? 'Destitution'
+                : 'Below target'}
+            </span>
+          </button>
+        }
         showGridlines={true}
         enableGridlineToggle={true}
+        showLegend={false}
         showDots={false}
         xAxisTicks={xAxisTicks}
       />
