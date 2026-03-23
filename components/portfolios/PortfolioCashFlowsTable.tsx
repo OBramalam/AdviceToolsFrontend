@@ -6,7 +6,11 @@ import { useState, useMemo } from 'react'
 import { CashFlow } from '@/types/api'
 import { useCashFlows, useCreateCashFlow, useUpdateCashFlow, useDeleteCashFlow } from '@/lib/hooks/useCashFlows'
 import { BaseTable } from '@/components/dashboard/BaseTable'
-import { formatCurrency } from '@/lib/utils/format'
+import {
+  formatCurrency,
+  formatGrowthRatePercentDisplay,
+  parseGrowthRatePercentInput,
+} from '@/lib/utils/format'
 import { Spinner } from '@/components/ui/Spinner'
 import { Trash2 } from 'lucide-react'
 
@@ -174,6 +178,7 @@ export function PortfolioCashFlowsTable({
         name: '',
         description: '',
         amount: 0,
+        growth_rate: null,
         basis: 'fixed',
         periodicity: 'monthly',
         frequency: 1,
@@ -274,6 +279,7 @@ export function PortfolioCashFlowsTable({
         name: edit.name ?? cf.name,
         description: edit.description ?? cf.description ?? '',
         amount: edit.amount ?? cf.amount,
+        growth_rate: edit.growth_rate ?? cf.growth_rate ?? null,
         periodicity: edit.periodicity ?? cf.periodicity ?? 'monthly',
         frequency: edit.frequency ?? cf.frequency ?? 1,
         start_date: edit.start_date ?? cf.start_date,
@@ -302,6 +308,7 @@ export function PortfolioCashFlowsTable({
         name: data.name,
         description: data.description ?? '',
         amount: data.amount,
+        growth_rate: data.growth_rate ?? null,
         periodicity: data.periodicity ?? 'monthly',
         frequency: data.frequency ?? 1,
         start_date: data.start_date ?? getTodayDate(),
@@ -445,6 +452,7 @@ export function PortfolioCashFlowsTable({
             'Name',
             'Type',
             'Amount',
+            'Growth Rate (%)',
             'Reference Income',
             'Periodicity',
             'Frequency',
@@ -457,6 +465,7 @@ export function PortfolioCashFlowsTable({
             220, // Name - wider
             220, // Type - wider
             120, // Amount
+            130, // Growth rate
             220, // Reference Income - wider
             150, // Periodicity - a bit wider
             90, // Frequency - a bit bigger
@@ -593,6 +602,26 @@ export function PortfolioCashFlowsTable({
                       placeholder={basis === 'fixed' ? '0' : '10 = 10%'}
                     />
                   </div>
+                </td>
+                <td className="px-4 py-3">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={
+                      formatGrowthRatePercentDisplay(getValue(
+                        entry.type === 'existing'
+                          ? { type: 'existing', cf: entry.cf }
+                          : { type: 'new', tempId: entry.tempId, cf: entry.cf },
+                        'growth_rate'
+                      ))
+                    }
+                    onChange={(e) => {
+                      const nextValue = parseGrowthRatePercentInput(e.target.value)
+                      handleFieldChange('growth_rate', nextValue)
+                    }}
+                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="Default"
+                  />
                 </td>
                 <td className="px-4 py-3">
                   {basis === 'pct_specific_income' ? (

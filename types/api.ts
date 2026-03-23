@@ -29,6 +29,7 @@ export interface CashFlow {
   name: string
   description: string
   amount: number // Interpretation depends on 'basis' (see below)
+  growth_rate?: number | null // Optional annual nominal growth override for fixed recurring cashflows
   periodicity?: 'monthly' | 'quarterly' | 'annually' | 'one_off' // Time unit for cashflow occurrence (default: "monthly")
   frequency?: number // Number of periods to skip between occurrences (default: 1, ignored for "one_off")
   start_date?: string // ISO 8601 datetime, required for recurring cashflows, optional for one_off

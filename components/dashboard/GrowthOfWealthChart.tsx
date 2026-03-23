@@ -16,6 +16,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
+import { Grid3x3 } from 'lucide-react'
 import { BaseChart, BaseChartProps } from '@/components/charts/BaseChart'
 import { FinancialPlan, SimulationResponse, Portfolio } from '@/types/api'
 import { usePortfolios } from '@/lib/hooks/usePortfolios'
@@ -55,6 +56,7 @@ export function GrowthOfWealthChart({
 }: GrowthOfWealthChartProps) {
   // Default to real (inflation-adjusted) values
   const [useReal, setUseReal] = useState<boolean>(true)
+  const [showGridlines, setShowGridlines] = useState<boolean>(true)
   
   // Fetch portfolios to map IDs to names
   const { data: portfolios } = usePortfolios(plan?.id)
@@ -241,6 +243,22 @@ export function GrowthOfWealthChart({
           >
             <span>{useReal ? 'Real' : 'Nominal'}</span>
           </button>
+          <button
+            data-export-hide="true"
+            onClick={() => setShowGridlines(!showGridlines)}
+            className={clsx(
+              'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+              'hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+              showGridlines
+                ? 'text-gray-700 bg-gray-50'
+                : 'text-gray-500 bg-white'
+            )}
+            type="button"
+            aria-label={showGridlines ? 'Hide gridlines' : 'Show gridlines'}
+          >
+            <Grid3x3 className="w-4 h-4" />
+            <span>Gridlines</span>
+          </button>
         </div>
 
         <ResponsiveContainer width="100%" height="100%">
@@ -275,7 +293,11 @@ export function GrowthOfWealthChart({
                 )
               })}
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#e5e7eb"
+              opacity={showGridlines ? 1 : 0}
+            />
             <XAxis
               dataKey="age"
               stroke="#6b7280"

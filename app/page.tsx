@@ -31,14 +31,13 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 mb-35">
         <div className="text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Financial Planning Made Simple
+          <h1 className="text-5xl font-bold text-gray-900 mb-6 mt-35">
+            Monte. 
           </h1>
           <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto">
-            AI-powered financial planning assistant to help you build a
-            comprehensive retirement plan. Chat with our AI to get started.
+          Financial Planning Made Simple.
           </p>
           <div className="flex justify-center space-x-4">
             <Link href="/login">

@@ -43,3 +43,26 @@ export function formatNumber(value: number, decimals: number = 0): string {
   }).format(value)
 }
 
+/**
+ * Format a decimal annual growth rate (e.g. 0.05) for UI as a percentage, max 2 decimal places.
+ * Avoids long floating-point strings from binary arithmetic.
+ */
+export function formatGrowthRatePercentDisplay(value?: number | null): string {
+  if (value == null || Number.isNaN(value)) return ''
+  const pct = Math.round(value * 100 * 100) / 100
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(pct)
+}
+
+/**
+ * Parse a percentage string from the UI (e.g. "5" or "3.25") to API decimal (e.g. 0.05).
+ */
+export function parseGrowthRatePercentInput(raw: string): number | null {
+  if (raw.trim() === '') return null
+  const parsed = Number(raw)
+  if (Number.isNaN(parsed)) return null
+  return parsed / 100
+}
+

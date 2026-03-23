@@ -5,7 +5,11 @@
 import { useState } from 'react'
 import { BaseTable } from './BaseTable'
 import { CashFlow } from '@/types/api'
-import { formatCurrency } from '@/lib/utils/format'
+import {
+  formatCurrency,
+  formatGrowthRatePercentDisplay,
+  parseGrowthRatePercentInput,
+} from '@/lib/utils/format'
 import {
   useUpdateCashFlow,
   useCreateCashFlow,
@@ -73,7 +77,7 @@ export function IncomeTable({ incomes, planId, className }: IncomeTableProps) {
   const handleChange = (
     id: number | string,
     field: keyof Omit<CashFlow, 'id' | 'plan_id'>,
-    value: string | number | undefined
+    value: string | number | null | undefined
   ) => {
     setEdits((prev) => ({
       ...prev,
@@ -87,7 +91,7 @@ export function IncomeTable({ incomes, planId, className }: IncomeTableProps) {
   const handleNewEntryChange = (
     tempId: string,
     field: keyof Omit<CashFlow, 'id' | 'plan_id'>,
-    value: string | number | undefined
+    value: string | number | null | undefined
   ) => {
     setNewEntries((prev) => ({
       ...prev,
@@ -163,6 +167,7 @@ export function IncomeTable({ incomes, planId, className }: IncomeTableProps) {
         name: '',
         description: '',
         amount: 0,
+        growth_rate: null,
         periodicity: 'monthly',
         frequency: 1,
         start_date: getTodayDate(),
@@ -254,6 +259,7 @@ export function IncomeTable({ incomes, planId, className }: IncomeTableProps) {
             name: edit.name ?? income.name,
             description: edit.description ?? income.description ?? '',
             amount: edit.amount ?? income.amount,
+            growth_rate: edit.growth_rate ?? income.growth_rate ?? null,
             periodicity: edit.periodicity ?? income.periodicity ?? 'monthly',
             frequency: edit.frequency ?? income.frequency ?? 1,
             start_date: edit.start_date ?? income.start_date,
@@ -335,6 +341,7 @@ export function IncomeTable({ incomes, planId, className }: IncomeTableProps) {
           headers={[
             'Name',
             'Amount',
+            'Growth Rate (%)',
             'Periodicity',
             'Frequency',
             'Start Date',
@@ -344,7 +351,7 @@ export function IncomeTable({ incomes, planId, className }: IncomeTableProps) {
         >
           <tr>
             <td
-              colSpan={7}
+              colSpan={8}
               className="px-4 py-8 text-center text-sm text-gray-500"
             >
               No income entries found
@@ -396,6 +403,7 @@ export function IncomeTable({ incomes, planId, className }: IncomeTableProps) {
         headers={[
           'Name',
           'Amount',
+          'Growth Rate (%)',
           'Periodicity',
           'Frequency',
           'Start Date',
@@ -442,6 +450,31 @@ export function IncomeTable({ incomes, planId, className }: IncomeTableProps) {
                     className="w-full pl-6 pr-2 py-1 border border-gray-300 rounded text-sm font-semibold text-green-600 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
+              </td>
+              <td className="px-4 py-3">
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formatGrowthRatePercentDisplay(getValue(entry, 'growth_rate'))}
+                  onChange={(e) => {
+                    const nextValue = parseGrowthRatePercentInput(e.target.value)
+                    if (isNew) {
+                      handleNewEntryChange(
+                        entryId as string,
+                        'growth_rate',
+                        nextValue
+                      )
+                    } else {
+                      handleChange(
+                        entryId as number,
+                        'growth_rate',
+                        nextValue
+                      )
+                    }
+                  }}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Default"
+                />
               </td>
               <td className="px-4 py-3">
                 <select
