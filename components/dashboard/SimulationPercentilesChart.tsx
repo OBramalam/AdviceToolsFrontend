@@ -76,17 +76,13 @@ function transformSimulationResults(
     hasMedian: medianArray.length > 0,
   })
 
-  // Map timesteps to chart data using precomputed statistics
+  // Fractional age on x so monthly (sub-year) points stay distinct for tooltips / hover
   const chartData: ChartDataPoint[] = timesteps
     .map((timestep: number) => {
-      // Convert timestep to age using the timestep_unit from the response
-      const age = Math.floor(
-        timestepToAge(timestep, plan.start_age, timestepUnit)
-      )
+      const ageYears = timestepToAge(timestep, plan.start_age, timestepUnit)
 
-      // Direct access to precomputed values - no calculations!
       return {
-        age: age,
+        age: ageYears,
         mean: mean[timestep] ?? 0,
         median: medianArray[timestep] ?? 0,
         percentile1: percentile1Array[timestep] ?? 0,
@@ -95,7 +91,7 @@ function transformSimulationResults(
     })
     .filter((point: ChartDataPoint) => {
       const pointAge = typeof point.age === 'number' ? point.age : Number(point.age)
-      return pointAge <= plan.plan_end_age
+      return Math.floor(pointAge) <= plan.plan_end_age
     })
 
   console.log(
@@ -125,6 +121,21 @@ export function SimulationPercentilesChart({
 
   // State for nominal vs real (default to real)
   const [useReal, setUseReal] = useState<boolean>(true)
+
+  const xAxisTickFormatter = useMemo(
+    () => (value: unknown) => {
+      const n = typeof value === 'number' ? value : Number(value)
+      if (!Number.isFinite(n)) return String(value ?? '')
+      return String(Math.round(n))
+    },
+    []
+  )
+
+  const tooltipLabelFormatter = (label: any) => {
+    const n = typeof label === 'number' ? label : Number(label)
+    if (Number.isFinite(n)) return String(Math.floor(n))
+    return String(label ?? '')
+  }
 
   // Tooltip formatter to show currency with 0 decimal places
   const tooltipFormatter = (value: any) => {
@@ -244,7 +255,10 @@ export function SimulationPercentilesChart({
             showNominalRealToggle={true}
             showDots={false}
             xAxisTicks={xAxisTicks}
+            xAxisType="number"
+            xAxisTickFormatter={xAxisTickFormatter}
             tooltipFormatter={tooltipFormatter}
+            tooltipLabelFormatter={tooltipLabelFormatter}
           />
           {/* Percentile Controls - Below Legend */}
           <div

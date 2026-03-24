@@ -87,6 +87,7 @@ function riskTooltipFormatter(
 function riskTooltipLabelFormatter(label: any) {
   const n = typeof label === 'number' ? label : Number(label)
   if (Number.isFinite(n)) {
+    // Integer age in tooltip; x-axis uses fractional ages so hover updates each timestep
     return String(Math.floor(n))
   }
   return String(label ?? '')
@@ -137,24 +138,25 @@ function transformRiskData(
     )
   }
 
-  // Transform to chart data format, filtering by plan_end_age
+  // Use fractional age on the x-axis so monthly (or sub-year) points are distinct.
+  // Floored age would collapse ~12 months onto one x and break tooltips / hover.
   const data: ChartDataPoint[] = timesteps
     .map((timestep: number, index: number) => {
-      // Convert timestep to age using the timestep_unit from the response
-      const age = Math.floor(
-        timestepToAge(timestep, plan.start_age, timestepUnit)
-      )
+      const ageYears = timestepToAge(timestep, plan.start_age, timestepUnit)
       const pRaw = riskSeries[index] !== undefined ? riskSeries[index] : 0
       const p = Math.min(1, Math.max(0, Number(pRaw)))
       const displayPct =
         viewMode === 'failure' ? p * 100 : (1 - p) * 100
 
       return {
-        age: age,
+        age: ageYears,
         risk: displayPct,
       }
     })
-    .filter((point: ChartDataPoint) => (point.age as number) <= plan.plan_end_age)
+    .filter(
+      (point: ChartDataPoint) =>
+        Math.floor(point.age as number) <= plan.plan_end_age
+    )
 
   console.log('[RiskOfFailureChart] Transformed chart data:', data.slice(0, 3), '... (showing first 3)')
   return data
@@ -211,6 +213,15 @@ export function RiskOfFailureChart({
     if (!plan) return undefined
     return buildYearTicks(plan.start_age, plan.plan_end_age)
   }, [plan])
+
+  const xAxisTickFormatter = useMemo(
+    () => (value: unknown) => {
+      const n = typeof value === 'number' ? value : Number(value)
+      if (!Number.isFinite(n)) return String(value ?? '')
+      return String(Math.round(n))
+    },
+    []
+  )
 
   if (isSimulating) {
     return (
@@ -308,6 +319,8 @@ export function RiskOfFailureChart({
         showLegend={false}
         showDots={false}
         xAxisTicks={xAxisTicks}
+        xAxisType="number"
+        xAxisTickFormatter={xAxisTickFormatter}
         tooltipFormatter={riskTooltipFormatter}
         tooltipLabelFormatter={riskTooltipLabelFormatter}
       />

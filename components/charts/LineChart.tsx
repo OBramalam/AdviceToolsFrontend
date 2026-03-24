@@ -37,6 +37,8 @@ export interface LineChartProps extends Omit<BaseChartProps, 'children'> {
   showDots?: boolean // Whether to show dots on the line (default: true)
   xAxisTicks?: number[]
   xAxisTickFormatter?: (value: any, index: number) => string
+  /** Recharts XAxis type — use `number` when x values are continuous (e.g. fractional ages). */
+  xAxisType?: 'number' | 'category'
   // Optional custom tooltip formatter (Recharts Tooltip formatter signature)
   tooltipFormatter?: (value: any, name: string | undefined, props: any) => any
   /** Formats the tooltip header label (e.g. x-axis value) */
@@ -64,6 +66,7 @@ export function LineChart({
   showDots = true,
   xAxisTicks,
   xAxisTickFormatter,
+  xAxisType,
   tooltipFormatter,
   tooltipLabelFormatter,
 }: LineChartProps) {
@@ -221,6 +224,7 @@ export function LineChart({
             opacity={showGridlines ? 1 : 0}
           />
           <XAxis
+            {...(xAxisType != null ? { type: xAxisType } : {})}
             dataKey={xAxisKey}
             stroke="#6b7280"
             tick={{ fill: '#6b7280', fontSize: 12 }}

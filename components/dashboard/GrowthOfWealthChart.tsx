@@ -101,15 +101,12 @@ export function GrowthOfWealthChart({
       return []
     }
 
-    // Extract mean values for each portfolio, filtering by plan_end_age
+    // Fractional age on x so monthly points stay distinct for tooltips / hover
     const data = timesteps
       .map((timestep: number) => {
-        // Convert timestep to age using the timestep_unit from the response
-        const age = Math.floor(
-          timestepToAge(timestep, plan.start_age, timestepUnit)
-        )
+        const ageYears = timestepToAge(timestep, plan.start_age, timestepUnit)
         const dataPoint: Record<string, any> = {
-          age: age,
+          age: ageYears,
         }
 
         // Add mean value for each portfolio
@@ -141,7 +138,10 @@ export function GrowthOfWealthChart({
 
         return dataPoint
       })
-      .filter((point: Record<string, any>) => point.age <= plan.plan_end_age)
+      .filter(
+        (point: Record<string, any>) =>
+          Math.floor(point.age as number) <= plan.plan_end_age
+      )
 
     return data
   }, [plan, simulationResponse, useReal, portfolioIdToName])
@@ -161,6 +161,15 @@ export function GrowthOfWealthChart({
     if (!plan) return undefined
     return buildYearTicks(plan.start_age, plan.plan_end_age)
   }, [plan])
+
+  const xAxisTickFormatter = useMemo(
+    () => (value: unknown) => {
+      const n = typeof value === 'number' ? value : Number(value)
+      if (!Number.isFinite(n)) return String(value ?? '')
+      return String(Math.round(n))
+    },
+    []
+  )
 
   const yAxisFormat = useMemo(() => {
     const maxAbs = chartData.reduce((currentMax: number, point: Record<string, any>) => {
@@ -299,10 +308,12 @@ export function GrowthOfWealthChart({
               opacity={showGridlines ? 1 : 0}
             />
             <XAxis
+              type="number"
               dataKey="age"
               stroke="#6b7280"
               tick={{ fill: '#6b7280', fontSize: 12 }}
               ticks={xAxisTicks}
+              tickFormatter={xAxisTickFormatter}
               label={{
                 value: 'Age',
                 position: 'insideBottom',
@@ -332,6 +343,11 @@ export function GrowthOfWealthChart({
                 padding: '0.5rem',
               }}
               labelStyle={{ color: '#374151', fontWeight: 600 }}
+              labelFormatter={(label) => {
+                const n = typeof label === 'number' ? label : Number(label)
+                if (Number.isFinite(n)) return String(Math.floor(n))
+                return String(label ?? '')
+              }}
               formatter={(value: number | undefined, name: string | undefined) => {
                 if (value === undefined) return ['', '']
                 return [
