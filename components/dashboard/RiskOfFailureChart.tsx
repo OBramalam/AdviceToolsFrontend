@@ -1,4 +1,4 @@
-// Risk of Failure Chart component - Line chart showing probability of failure over time
+// Risk chart: failure probability or success likelihood (1 − P(failure)) over time
 
 'use client'
 
@@ -22,14 +22,37 @@ export interface RiskOfFailureChartProps {
 }
 
 type RiskMetric = 'destitution' | 'below_target'
+type RiskViewMode = 'failure' | 'success'
 
-function metricLabel(metric: RiskMetric): string {
-  return metric === 'destitution' ? 'Destitution Risk' : 'Plan Failure Risk'
+function chartTitle(viewMode: RiskViewMode): string {
+  return viewMode === 'failure'
+    ? 'Risk of Failure'
+    : 'Likelihood of Success'
 }
 
-function metricSubtitle(metric: RiskMetric, targetValue: number): string {
+function yAxisLabelForView(viewMode: RiskViewMode): string {
+  return viewMode === 'failure' ? 'Risk (%)' : 'Success (%)'
+}
+
+function lineSeriesLabel(metric: RiskMetric, viewMode: RiskViewMode): string {
+  if (viewMode === 'failure') {
+    return metric === 'destitution' ? 'Destitution risk' : 'Below target risk'
+  }
+  return metric === 'destitution'
+    ? 'At or above $0'
+    : 'At or above target'
+}
+
+function metricSubtitle(
+  metric: RiskMetric,
+  targetValue: number,
+  viewMode: RiskViewMode
+): string {
   if (metric === 'destitution') {
-    return 'Likelihood that portfolio value falls below $0.'
+    if (viewMode === 'failure') {
+      return 'Likelihood that total wealthh falls below $0.'
+    }
+    return 'Likelihood that total wealth stays at or above $0.'
   }
   const formattedTarget = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -37,14 +60,18 @@ function metricSubtitle(metric: RiskMetric, targetValue: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(targetValue)
-  return `Likelihood that portfolio value falls below ${formattedTarget}.`
+  if (viewMode === 'failure') {
+    return `Likelihood that total wealth falls below ${formattedTarget}.`
+  }
+  return `Likelihood that total wealth stays at or above ${formattedTarget}.`
 }
 
 // Transform selected risk metric data into chart data
 function transformRiskData(
   result: any,
   plan: FinancialPlan,
-  metric: RiskMetric
+  metric: RiskMetric,
+  viewMode: RiskViewMode
 ): ChartDataPoint[] {
   if (!result) {
     console.log('[RiskOfFailureChart] No simulation result provided')
@@ -91,11 +118,14 @@ function transformRiskData(
       const age = Math.floor(
         timestepToAge(timestep, plan.start_age, timestepUnit)
       )
-      const risk = riskSeries[index] !== undefined ? riskSeries[index] : 0
+      const pRaw = riskSeries[index] !== undefined ? riskSeries[index] : 0
+      const p = Math.min(1, Math.max(0, Number(pRaw)))
+      const displayPct =
+        viewMode === 'failure' ? p * 100 : (1 - p) * 100
 
       return {
         age: age,
-        risk: risk * 100, // Convert to percentage for display
+        risk: displayPct,
       }
     })
     .filter((point: ChartDataPoint) => (point.age as number) <= plan.plan_end_age)
@@ -112,7 +142,8 @@ export function RiskOfFailureChart({
   height = 400,
   className,
 }: RiskOfFailureChartProps) {
-  const [selectedMetric, setSelectedMetric] = useState<RiskMetric>('destitution')
+  const [selectedMetric, setSelectedMetric] = useState<RiskMetric>('below_target')
+  const [viewMode, setViewMode] = useState<RiskViewMode>('success')
 
   // Transform selected risk metric data into chart data
   const chartData = useMemo(() => {
@@ -129,20 +160,25 @@ export function RiskOfFailureChart({
       return []
     }
 
-    return transformRiskData(simulationResponse.result, plan, selectedMetric)
-  }, [plan, simulationResponse, selectedMetric])
+    return transformRiskData(
+      simulationResponse.result,
+      plan,
+      selectedMetric,
+      viewMode
+    )
+  }, [plan, simulationResponse, selectedMetric, viewMode])
 
   // Chart line series configuration
   const chartLines: LineSeries[] = useMemo(
     () => [
       {
         key: 'risk',
-        label: metricLabel(selectedMetric),
-        color: '#ef4444', // Red for risk
+        label: lineSeriesLabel(selectedMetric, viewMode),
+        color: viewMode === 'failure' ? '#ef4444' : '#22c55e',
         visible: true,
       },
     ],
-    [selectedMetric]
+    [selectedMetric, viewMode]
   )
 
   const xAxisTicks = useMemo(() => {
@@ -155,7 +191,7 @@ export function RiskOfFailureChart({
       <Card className="flex items-center justify-center h-[400px]">
         <div className="text-center">
           <Spinner size="lg" className="mx-auto mb-4" />
-          <p className="text-gray-600">Calculating risk of failure...</p>
+          <p className="text-gray-600">Calculating risk and success likelihood...</p>
         </div>
       </Card>
     )
@@ -165,11 +201,11 @@ export function RiskOfFailureChart({
     return (
       <Card className="flex items-center justify-center h-[400px]">
         <div className="text-center">
-          <p className="text-red-600 mb-2">Error loading risk of failure</p>
+          <p className="text-red-600 mb-2">Error loading risk chart</p>
           <p className="text-sm text-gray-600">
             {simulationError instanceof Error
               ? simulationError.message
-              : 'Failed to load risk of failure chart'}
+              : 'Failed to load risk chart'}
           </p>
         </div>
       </Card>
@@ -179,7 +215,7 @@ export function RiskOfFailureChart({
   if (chartData.length === 0) {
     return (
       <Card className="flex items-center justify-center h-[400px]">
-        <p className="text-gray-600">No risk of failure data available</p>
+        <p className="text-gray-600">No risk data available</p>
       </Card>
     )
   }
@@ -190,33 +226,56 @@ export function RiskOfFailureChart({
         data={chartData}
         xAxisKey="age"
         lines={chartLines}
-        title="Risk of Failure"
-        subtitle={metricSubtitle(selectedMetric, plan?.portfolio_target_value ?? 0)}
+        title={chartTitle(viewMode)}
+        subtitle={metricSubtitle(
+          selectedMetric,
+          plan?.portfolio_target_value ?? 0,
+          viewMode
+        )}
         xAxisLabel="Age"
-        yAxisLabel="Risk (%)"
+        yAxisLabel={yAxisLabelForView(viewMode)}
         height={height}
         customControls={
-          <button
-            data-export-hide="true"
-            onClick={() =>
-              setSelectedMetric((current) =>
-                current === 'destitution' ? 'below_target' : 'destitution'
-              )
-            }
-            className={clsx(
-              'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-              'hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
-              'text-gray-700 bg-gray-50'
-            )}
-            type="button"
-            aria-label="Toggle risk metric"
-          >
-            <span>
-              {selectedMetric === 'destitution'
-                ? 'Destitution'
-                : 'Below target'}
-            </span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              data-export-hide="true"
+              onClick={() =>
+                setViewMode((current) =>
+                  current === 'failure' ? 'success' : 'failure'
+                )
+              }
+              className={clsx(
+                'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                'hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                'text-gray-700 bg-gray-50'
+              )}
+              type="button"
+              aria-label="Toggle failure or success view"
+            >
+              <span>{viewMode === 'failure' ? 'Failure' : 'Success'}</span>
+            </button>
+            <button
+              data-export-hide="true"
+              onClick={() =>
+                setSelectedMetric((current) =>
+                  current === 'destitution' ? 'below_target' : 'destitution'
+                )
+              }
+              className={clsx(
+                'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                'hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                'text-gray-700 bg-gray-50'
+              )}
+              type="button"
+              aria-label="Toggle destitution or below target metric"
+            >
+              <span>
+                {selectedMetric === 'destitution'
+                  ? 'Destitution'
+                  : 'Below target'}
+              </span>
+            </button>
+          </div>
         }
         showGridlines={true}
         enableGridlineToggle={true}

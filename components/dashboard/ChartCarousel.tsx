@@ -25,7 +25,7 @@ type ChartType = 'projection' | 'growth' | 'destitution'
 const CHARTS: Array<{ id: ChartType; name: string }> = [
   { id: 'projection', name: 'Simulation Percentiles' },
   { id: 'growth', name: 'Growth of Wealth' },
-  { id: 'destitution', name: 'Risk of Failure' },
+  { id: 'destitution', name: 'Risk Analysis' },
 ]
 
 export function ChartCarousel({
