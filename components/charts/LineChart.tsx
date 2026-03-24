@@ -39,6 +39,8 @@ export interface LineChartProps extends Omit<BaseChartProps, 'children'> {
   xAxisTickFormatter?: (value: any, index: number) => string
   // Optional custom tooltip formatter (Recharts Tooltip formatter signature)
   tooltipFormatter?: (value: any, name: string | undefined, props: any) => any
+  /** Formats the tooltip header label (e.g. x-axis value) */
+  tooltipLabelFormatter?: (label: any, payload: readonly any[]) => ReactNode
 }
 
 export function LineChart({
@@ -63,6 +65,7 @@ export function LineChart({
   xAxisTicks,
   xAxisTickFormatter,
   tooltipFormatter,
+  tooltipLabelFormatter,
 }: LineChartProps) {
   // Track gridline visibility
   const [showGridlines, setShowGridlines] = useState(initialShowGridlines)
@@ -261,6 +264,7 @@ export function LineChart({
             }}
             labelStyle={{ color: '#374151', fontWeight: 600 }}
             formatter={tooltipFormatter}
+            labelFormatter={tooltipLabelFormatter}
           />
           {showLegend && (
             <Legend

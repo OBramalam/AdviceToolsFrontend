@@ -66,6 +66,32 @@ function metricSubtitle(
   return `Likelihood that total wealth stays at or above ${formattedTarget}.`
 }
 
+function formatRiskTooltipPercentValue(value: unknown): string {
+  const n = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(n)) return String(value ?? '')
+  const rounded = Math.round(n * 100) / 100
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(rounded)
+}
+
+function riskTooltipFormatter(
+  value: any,
+  name: string | undefined,
+  _props: any
+) {
+  return [`${formatRiskTooltipPercentValue(value)}%`, name ?? '']
+}
+
+function riskTooltipLabelFormatter(label: any) {
+  const n = typeof label === 'number' ? label : Number(label)
+  if (Number.isFinite(n)) {
+    return String(Math.floor(n))
+  }
+  return String(label ?? '')
+}
+
 // Transform selected risk metric data into chart data
 function transformRiskData(
   result: any,
@@ -282,6 +308,8 @@ export function RiskOfFailureChart({
         showLegend={false}
         showDots={false}
         xAxisTicks={xAxisTicks}
+        tooltipFormatter={riskTooltipFormatter}
+        tooltipLabelFormatter={riskTooltipLabelFormatter}
       />
     </Card>
   )
