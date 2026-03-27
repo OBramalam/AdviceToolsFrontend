@@ -28,9 +28,9 @@ export function useCreateAdviserConfig() {
   return useMutation({
     mutationFn: (data: Omit<AdviserConfig, 'risk_allocation_map'>) =>
       adviserConfigApi.createAdviserConfig(data),
-    onSuccess: () => {
-      // Invalidate config query to refetch
-      queryClient.invalidateQueries({ queryKey: ['adviserConfig'] })
+    onSuccess: (saved) => {
+      // Use response body as source of truth (includes tax_jurisdiction, etc.)
+      queryClient.setQueryData(['adviserConfig'], saved)
     },
   })
 }
@@ -46,9 +46,8 @@ export function useUpdateAdviserConfig() {
       data: Omit<AdviserConfig, 'risk_allocation_map'>
       existingRiskMap?: Record<number, number>
     }) => adviserConfigApi.updateAdviserConfig(data, existingRiskMap),
-    onSuccess: () => {
-      // Invalidate config query to refetch
-      queryClient.invalidateQueries({ queryKey: ['adviserConfig'] })
+    onSuccess: (saved) => {
+      queryClient.setQueryData(['adviserConfig'], saved)
     },
   })
 }

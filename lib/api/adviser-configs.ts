@@ -5,6 +5,7 @@ import type { AdviserConfig } from '@/types/api'
 
 export async function getAdviserConfig(): Promise<AdviserConfig> {
   const response = await apiClient.get<AdviserConfig>('/adviser-configs')
+  console.log('[adviser-configs] GET received', response.data)
   return response.data
 }
 
@@ -29,6 +30,7 @@ export async function updateAdviserConfig(
     ...data,
     risk_allocation_map: existingRiskMap || {},
   }
+  console.log('[adviser-configs] PUT sending', payload)
   const response = await apiClient.put<AdviserConfig>('/adviser-configs', payload)
   return response.data
 }

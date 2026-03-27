@@ -11,7 +11,6 @@ import {
 } from '@/lib/hooks/useAdviserConfig'
 import { Spinner } from '@/components/ui/Spinner'
 import { Button } from '@/components/ui/Button'
-import { clsx } from 'clsx'
 
 // Helper to convert decimal to percentage string (e.g., 0.02 -> "2")
 function decimalToPercent(decimal: number | null | undefined): string {
@@ -27,8 +26,12 @@ function percentToDecimal(percentStr: string): number | null {
   return num / 100
 }
 
+/** Select value for domicile; empty string means null (domicile naive) on the API */
+type DomicileSelect = '' | 'nz'
+
 // Default values when no config exists
 const defaultValues = {
+  tax_jurisdiction: '' as DomicileSelect,
   inflation: '2.0',
   asset_costs_stocks: '0.1',
   asset_costs_bonds: '0.1',
@@ -40,12 +43,18 @@ const defaultValues = {
   allocation_step: '10.0',
 }
 
+function domicileFromConfig(taxJurisdiction: string | null | undefined): DomicileSelect {
+  if (taxJurisdiction == null || taxJurisdiction === '') return ''
+  return taxJurisdiction.toLowerCase() === 'nz' ? 'nz' : ''
+}
+
 export function DefaultSettingsForm() {
   const { data: config, isLoading, error } = useAdviserConfig()
   const createMutation = useCreateAdviserConfig()
   const updateMutation = useUpdateAdviserConfig()
 
   const [formData, setFormData] = useState<{
+    tax_jurisdiction: DomicileSelect
     inflation: string
     asset_costs_stocks: string
     asset_costs_bonds: string
@@ -64,6 +73,7 @@ export function DefaultSettingsForm() {
   useEffect(() => {
     if (config) {
       setFormData({
+        tax_jurisdiction: domicileFromConfig(config.tax_jurisdiction),
         inflation: decimalToPercent(config.inflation) || defaultValues.inflation,
         asset_costs_stocks: decimalToPercent(config.asset_costs?.stocks) || defaultValues.asset_costs_stocks,
         asset_costs_bonds: decimalToPercent(config.asset_costs?.bonds) || defaultValues.asset_costs_bonds,
@@ -90,6 +100,8 @@ export function DefaultSettingsForm() {
   const handleSave = async () => {
     try {
       const payload: Omit<AdviserConfig, 'risk_allocation_map'> = {
+        tax_jurisdiction:
+          formData.tax_jurisdiction === 'nz' ? 'nz' : null,
         inflation: percentToDecimal(formData.inflation) || 0.02,
         asset_costs: {
           stocks: percentToDecimal(formData.asset_costs_stocks) || 0.001,
@@ -122,6 +134,7 @@ export function DefaultSettingsForm() {
   const handleCancel = () => {
     if (config) {
       setFormData({
+        tax_jurisdiction: domicileFromConfig(config.tax_jurisdiction),
         inflation: decimalToPercent(config.inflation),
         asset_costs_stocks: decimalToPercent(config.asset_costs?.stocks),
         asset_costs_bonds: decimalToPercent(config.asset_costs?.bonds),
@@ -180,6 +193,36 @@ export function DefaultSettingsForm() {
           </p>
         </div>
       )}
+
+      <div className="mb-6 pb-6 border-b border-gray-200">
+        <h4 className="text-md font-semibold text-gray-900 mb-2">Region</h4>
+        <div className="max-w-md flex flex-col gap-1">
+          <label
+            htmlFor="default-domicile"
+            className="text-sm font-medium text-gray-700"
+          >
+            Domicile
+          </label>
+          <select
+            id="default-domicile"
+            value={formData.tax_jurisdiction}
+            onChange={(e) =>
+              handleChange(
+                'tax_jurisdiction',
+                e.target.value as DomicileSelect
+              )
+            }
+            className="w-full px-2 py-2 border border-gray-300 rounded text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          >
+            <option value="">Domicile naive</option>
+            <option value="nz">NZ</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            Sets your default region for new plans and portfolio defaults. Domicile
+            naive uses no specific jurisdiction preset.
+          </p>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Inflation */}
